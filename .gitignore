@@ -295,3 +295,4 @@ access.log
 .env.production
 .env.staging
 .env.development
+.env.production.example
