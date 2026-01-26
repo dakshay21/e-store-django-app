@@ -1,7 +1,7 @@
 services:
   web:
     # Use the image from Docker Hub (built by CI/CD)
-    image: ${DOCKERHUB_REPOSITORY:-dakshay111/drf-deployment-pipeline}:latest
+    image: ${DOCKERHUB_REPOSITORY:-dakshay111/drf-pipeline-deployment}:latest
     # Pull the latest image
     pull_policy: always
     # No volume mounts - code is in the image
