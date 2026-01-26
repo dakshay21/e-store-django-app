@@ -48,6 +48,20 @@ jobs:
             echo "✅ Docker permissions OK"
           fi
 
+      - name: Login to Docker Hub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "${DOCKERHUB_USERNAME}" ] || [ -z "${DOCKERHUB_TOKEN}" ]; then
+            echo "⚠️  Docker Hub credentials not provided. Attempting to pull public image..."
+            echo "If the repository is private, add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN to GitHub Secrets"
+          else
+            echo "🔐 Logging in to Docker Hub..."
+            echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+            echo "✅ Docker Hub login successful"
+          fi
+
       - name: Deploy Application
         env:
           DOCKERHUB_REPOSITORY: ${{ secrets.DOCKERHUB_REPOSITORY }}
@@ -86,10 +100,26 @@ jobs:
             exit 1
           fi
           
+          # Display repository name for debugging
+          echo "📋 Repository: ${DOCKERHUB_REPOSITORY}"
+          echo "📋 Full image name: ${DOCKERHUB_REPOSITORY}:latest"
+          
           # Pull latest Docker image
           echo "📥 Pulling latest Docker image: ${DOCKERHUB_REPOSITORY}:latest"
-          docker pull ${DOCKERHUB_REPOSITORY}:latest || { echo "❌ Failed to pull image"; exit 1; }
-          echo "✅ Image pulled successfully"
+          if docker pull ${DOCKERHUB_REPOSITORY}:latest; then
+            echo "✅ Image pulled successfully"
+          else
+            echo "❌ Failed to pull image: ${DOCKERHUB_REPOSITORY}:latest"
+            echo ""
+            echo "Possible issues:"
+            echo "1. Repository name is incorrect: ${DOCKERHUB_REPOSITORY}"
+            echo "2. Image doesn't exist yet (check if Docker Hub push workflow completed)"
+            echo "3. Repository is private and requires authentication (add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets)"
+            echo "4. Network connectivity issues"
+            echo ""
+            echo "Verify the repository exists at: https://hub.docker.com/r/${DOCKERHUB_REPOSITORY}"
+            exit 1
+          fi
           
           # Stop existing containers
           echo "🛑 Stopping existing containers..."
