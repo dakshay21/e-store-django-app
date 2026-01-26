@@ -23,11 +23,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . /app/
 
-# Make entrypoint script executable
-RUN chmod +x /app/entrypoint.sh
+# Make entrypoint scripts executable
+RUN chmod +x /app/entrypoint.sh /app/entrypoint.prod.sh
 
 # Expose port
 EXPOSE 8000
 
-# Set entrypoint
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Set production entrypoint as default (can be overridden in docker-compose)
+ENTRYPOINT ["/app/entrypoint.prod.sh"]
