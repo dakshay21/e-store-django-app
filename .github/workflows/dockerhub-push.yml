@@ -29,6 +29,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Verify Docker Hub authentication
+        run: |
+          echo "Verifying Docker Hub authentication..."
+          docker info | grep -i username || echo "⚠️  Warning: Could not verify username"
+          echo "Repository: ${{ env.DOCKERHUB_REPOSITORY }}"
+
       - name: Extract short commit SHA
         id: commit
         run: |
@@ -45,6 +51,7 @@ jobs:
             ${{ env.DOCKERHUB_REPOSITORY }}:${{ steps.commit.outputs.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
       - name: Image push summary
         run: |
