@@ -17,8 +17,12 @@ from decouple import Config, RepositoryEnv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file
-config = Config(RepositoryEnv(BASE_DIR / '.env'))
+# Local dev: load from .env on disk. Production/Docker: no .env in image — use process env (docker-compose).
+_env_file = BASE_DIR / '.env'
+if _env_file.is_file():
+    config = Config(RepositoryEnv(_env_file))
+else:
+    config = Config(os.environ)
 
 
 # Quick-start development settings - unsuitable for production
