@@ -14,8 +14,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import path, include
 from rest_framework import permissions
+
+
+def health(request):
+    """Lightweight 200 for load balancers / deploy scripts (GET / has no route)."""
+    return JsonResponse({"status": "ok"})
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
@@ -33,6 +39,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    path('health/', health, name='health'),
     path('admin/', admin.site.urls),
     
     # API Documentation

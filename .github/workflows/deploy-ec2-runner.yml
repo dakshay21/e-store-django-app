@@ -143,16 +143,25 @@ jobs:
           echo "📊 Container status:"
           docker compose -f docker-compose.prod.yml ps
           
-          # Health check
+          # Health check: GET / returns 404 (no root URL); use /health/ and Host from ALLOWED_HOSTS
           echo "🏥 Performing health check..."
           if ! command -v curl &> /dev/null; then
             echo "⚠️  curl not found, skipping health check"
             echo "Install curl with: sudo apt install curl (Ubuntu) or sudo yum install curl (Amazon Linux)"
           else
+            RAW_ALLOWED=$(grep -E '^ALLOWED_HOSTS=' .env 2>/dev/null | head -1 | sed 's/^ALLOWED_HOSTS=//' | tr -d '\r' | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/" || true)
+            if echo "$RAW_ALLOWED" | grep -qE '(^|[,[:space:]])\*([,[:space:]]|$)'; then
+              HEALTH_HOST="localhost"
+            elif [ -n "$RAW_ALLOWED" ]; then
+              HEALTH_HOST=$(echo "$RAW_ALLOWED" | cut -d',' -f1 | tr -d ' ')
+            else
+              HEALTH_HOST="localhost"
+            fi
+            echo "📋 GET http://127.0.0.1/health/ with Host: ${HEALTH_HOST}"
             max_attempts=30
             attempt=0
             while [ $attempt -lt $max_attempts ]; do
-              if curl -f http://localhost > /dev/null 2>&1; then
+              if curl -fsS -o /dev/null -H "Host: ${HEALTH_HOST}" "http://127.0.0.1/health/"; then
                 echo "✅ Application is healthy!"
                 break
               fi
@@ -163,6 +172,7 @@ jobs:
             
             if [ $attempt -eq $max_attempts ]; then
               echo "❌ Health check failed after $max_attempts attempts"
+              echo "Expected: HTTP 200 from /health/ (GET / has no URL and returns 404)."
               echo "📋 Container status:"
               docker compose -f docker-compose.prod.yml ps
               echo "📋 Recent logs:"
